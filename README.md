@@ -4,6 +4,8 @@ VSCode extension to review the changes an AI agent makes to your code, PR-style:
 
 **Built for Claude Code** — install the extension and everything (MCP registration, `/zamview` command) is set up automatically. Other MCP-capable agents can connect by registering `http://localhost:7317/mcp` manually, but they are not officially supported for now.
 
+![ZamView demo: commenting on a diff and handing the review to Claude Code](media/demo.gif)
+
 ## Architecture
 
 - **`src/reviewStore.ts`** — source of truth for the review (threads, comments, pending/resolved/closed). Persists to `review.json` inside the extension's per-workspace storage (`context.storageUri`) — outside the repo. No `vscode` dependency, so it can be tested in plain Node.
