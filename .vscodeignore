@@ -4,6 +4,7 @@ node_modules/**
 sandbox/**
 sandbox2/**
 sandbox.code-workspace
+scripts/**
 esbuild.mjs
 tsconfig.json
 package-lock.json
