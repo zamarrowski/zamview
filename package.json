@@ -3,7 +3,7 @@
   "displayName": "ZamView",
   "description": "Review your AI agent's changes like a PR: comment on diffs and hand the review to the agent over MCP",
   "version": "0.1.0",
-  "publisher": "sergiozam",
+  "publisher": "zamarrowski",
   "license": "MIT",
   "repository": {
     "type": "git",
