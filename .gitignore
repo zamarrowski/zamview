@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.vsix
+
+# Demo fixtures with nested git repos — recreate with scripts/setup-sandbox.sh
+sandbox/
+sandbox2/

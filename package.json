@@ -1,0 +1,185 @@
+{
+  "name": "zamview",
+  "displayName": "ZamView",
+  "description": "Review your AI agent's changes like a PR: comment on diffs and hand the review to the agent over MCP",
+  "version": "0.1.0",
+  "publisher": "sergiozam",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zamarrowski/zamview.git"
+  },
+  "private": true,
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "extensionDependencies": [
+    "vscode.git"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "zamview",
+          "title": "ZamView",
+          "icon": "media/zamview.svg"
+        }
+      ]
+    },
+    "views": {
+      "zamview": [
+        {
+          "id": "zamviewChanges",
+          "name": "Review"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "zamview.refresh",
+        "title": "ZamView: Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "zamview.finishReview",
+        "title": "ZamView: Finish Review & Notify AI",
+        "icon": "$(send)"
+      },
+      {
+        "command": "zamview.copyMcpCommand",
+        "title": "ZamView: Copy MCP Registration Command"
+      },
+      {
+        "command": "zamview.setupClaude",
+        "title": "ZamView: Register MCP Server with Claude Code"
+      },
+      {
+        "command": "zamview.createComment",
+        "title": "Comment"
+      },
+      {
+        "command": "zamview.replyComment",
+        "title": "Reply"
+      },
+      {
+        "command": "zamview.reopenThread",
+        "title": "Reopen",
+        "icon": "$(debug-restart)"
+      },
+      {
+        "command": "zamview.closeThread",
+        "title": "Close conversation",
+        "icon": "$(check-all)"
+      },
+      {
+        "command": "zamview.deleteThread",
+        "title": "Delete thread",
+        "icon": "$(trash)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "zamview.finishReview",
+          "when": "view == zamviewChanges",
+          "group": "navigation@1"
+        },
+        {
+          "command": "zamview.refresh",
+          "when": "view == zamviewChanges",
+          "group": "navigation@2"
+        }
+      ],
+      "comments/commentThread/context": [
+        {
+          "command": "zamview.createComment",
+          "group": "inline@1",
+          "when": "commentController == zamview && commentThreadIsEmpty"
+        },
+        {
+          "command": "zamview.replyComment",
+          "group": "inline@1",
+          "when": "commentController == zamview && !commentThreadIsEmpty"
+        }
+      ],
+      "comments/commentThread/title": [
+        {
+          "command": "zamview.reopenThread",
+          "group": "navigation@1",
+          "when": "commentController == zamview && commentThread == resolved"
+        },
+        {
+          "command": "zamview.closeThread",
+          "group": "navigation@2",
+          "when": "commentController == zamview && commentThread =~ /pending|resolved/"
+        },
+        {
+          "command": "zamview.deleteThread",
+          "group": "navigation@3",
+          "when": "commentController == zamview && commentThread =~ /pending|resolved/"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "zamview.createComment",
+          "when": "false"
+        },
+        {
+          "command": "zamview.replyComment",
+          "when": "false"
+        },
+        {
+          "command": "zamview.reopenThread",
+          "when": "false"
+        },
+        {
+          "command": "zamview.closeThread",
+          "when": "false"
+        },
+        {
+          "command": "zamview.deleteThread",
+          "when": "false"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "ZamView",
+      "properties": {
+        "zamview.port": {
+          "type": "number",
+          "default": 7317,
+          "description": "Base port for ZamView's local MCP server. Each window uses the first free port at or above this value (reload the window after changing it)."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "esbuild": "node esbuild.mjs",
+    "compile": "npm run typecheck && npm run esbuild",
+    "watch": "node esbuild.mjs --watch",
+    "package": "vsce package --no-dependencies",
+    "sandbox": "bash scripts/setup-sandbox.sh",
+    "vscode:prepublish": "npm run typecheck && node esbuild.mjs --minify"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.14.0",
+    "@types/vscode": "^1.95.0",
+    "@vscode/vsce": "^3.9.2",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.6.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.0",
+    "express": "^4.21.0",
+    "zod": "^3.25.0"
+  }
+}
