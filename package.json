@@ -2,7 +2,7 @@
   "name": "zamview",
   "displayName": "ZamView",
   "description": "Review your AI agent's changes like a PR: comment on diffs and hand the review to the agent over MCP",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "zamarrowski",
   "icon": "media/icon.png",
   "license": "MIT",
