@@ -126,6 +126,26 @@ export class ReviewStore extends EventEmitter {
     return thread;
   }
 
+  editComment(id: string, index: number, text: string): ReviewThread | undefined {
+    const thread = this.threads.get(id);
+    const comment = thread?.comments[index];
+    if (!thread || !comment) return undefined;
+    comment.text = text;
+    this.persist();
+    this.emitChange();
+    return thread;
+  }
+
+  // Deleting the only comment is not allowed: that is removing the thread
+  removeComment(id: string, index: number): ReviewThread | undefined {
+    const thread = this.threads.get(id);
+    if (!thread || thread.comments.length <= 1 || !thread.comments[index]) return undefined;
+    thread.comments.splice(index, 1);
+    this.persist();
+    this.emitChange();
+    return thread;
+  }
+
   setStatus(id: string, status: ThreadStatus, note?: string): ReviewThread | undefined {
     const thread = this.threads.get(id);
     if (!thread) return undefined;

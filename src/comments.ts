@@ -1,6 +1,12 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { ReviewStore, ThreadStatus } from './reviewStore';
+import { ReviewStore, ReviewThread, ThreadStatus } from './reviewStore';
+
+// vscode.Comment plus the store coordinates needed to edit it later
+interface ZamComment extends vscode.Comment {
+  threadId: string;
+  index: number;
+}
 
 /**
  * Keeps the ReviewStore in sync with the VSCode Comments API.
@@ -49,7 +55,18 @@ export class ReviewComments {
       ),
       vscode.commands.registerCommand('zamview.deleteThread', (thread: vscode.CommentThread) =>
         this.remove(thread)
-      )
+      ),
+      vscode.commands.registerCommand('zamview.editComment', (comment: ZamComment) =>
+        this.startEdit(comment)
+      ),
+      vscode.commands.registerCommand('zamview.saveComment', (comment: ZamComment) =>
+        this.saveEdit(comment)
+      ),
+      vscode.commands.registerCommand('zamview.deleteComment', (comment: ZamComment) =>
+        this.store.removeComment(comment.threadId, comment.index)
+      ),
+      // resync rebuilds every comment from the store, discarding the draft
+      vscode.commands.registerCommand('zamview.cancelEditComment', () => this.sync())
     );
   }
 
@@ -58,7 +75,12 @@ export class ReviewComments {
     const thread = reply.thread;
     const range = thread.range ?? new vscode.Range(0, 0, 0, 0);
     const doc = await vscode.workspace.openTextDocument(thread.uri);
-    const endLine = Math.min(range.end.line, doc.lineCount - 1);
+    // A selection ending at column 0 does not really include that line
+    const rawEnd =
+      range.end.line > range.start.line && range.end.character === 0
+        ? range.end.line - 1
+        : range.end.line;
+    const endLine = Math.min(rawEnd, doc.lineCount - 1);
     const snippet = doc.getText(
       new vscode.Range(range.start.line, 0, endLine, doc.lineAt(endLine).text.length)
     );
@@ -102,6 +124,30 @@ export class ReviewComments {
     else thread.dispose();
   }
 
+  private startEdit(comment: ZamComment): void {
+    const vt = this.byId.get(comment.threadId);
+    if (!vt) return;
+    // mutate then reassign: the Comments API only re-renders on assignment
+    vt.comments = vt.comments.map((c) => {
+      if ((c as ZamComment).index === comment.index) c.mode = vscode.CommentMode.Editing;
+      return c;
+    });
+  }
+
+  private saveEdit(comment: ZamComment): void {
+    // VSCode has already written the edited text into comment.body
+    const text = typeof comment.body === 'string' ? comment.body : comment.body.value;
+    if (text.trim()) this.store.editComment(comment.threadId, comment.index, text);
+    else this.sync(); // emptied out: treat as cancel
+  }
+
+  // A range ending at column 0 is drawn by VSCode as a one-pixel border
+  // sliver that looks like a stray cursor, so end it at the last line's text
+  private threadRange(t: ReviewThread): vscode.Range {
+    const endCol = (t.snippet.split('\n').pop() ?? '').length;
+    return new vscode.Range(t.line - 1, 0, t.endLine - 1, endCol);
+  }
+
   private sync(): void {
     const seen = new Set<string>();
     // closed threads are not shown; the final loop removes them from the editor
@@ -110,21 +156,30 @@ export class ReviewComments {
       let vt = this.byId.get(t.id);
       if (!vt) {
         const uri = vscode.Uri.file(t.folder ? path.join(t.folder, t.file) : t.file);
-        vt = this.controller.createCommentThread(
-          uri,
-          new vscode.Range(t.line - 1, 0, t.endLine - 1, 0),
-          []
-        );
+        vt = this.controller.createCommentThread(uri, this.threadRange(t), []);
         vt.collapsibleState = vscode.CommentThreadCollapsibleState.Expanded;
         this.byId.set(t.id, vt);
         this.byThread.set(vt, t.id);
       }
-      vt.comments = t.comments.map((c) => ({
-        author: { name: c.author === 'agent' ? 'AI' : 'You' },
-        body: new vscode.MarkdownString(c.text),
-        mode: vscode.CommentMode.Preview,
-        timestamp: new Date(c.at),
-      }));
+      // reassign even for adopted threads: the ephemeral thread VSCode spawns
+      // on "+" may carry a column-0 end (see threadRange)
+      vt.range = this.threadRange(t);
+      vt.comments = t.comments.map((c, i): ZamComment => {
+        const flags: string[] = [];
+        // only the user's own comments on a not-yet-resolved thread are editable
+        if (c.author === 'user' && t.status === 'pending') flags.push('editable');
+        // deleting the only comment would be deleting the thread, which has its own button
+        if (t.comments.length > 1) flags.push('deletable');
+        return {
+          threadId: t.id,
+          index: i,
+          author: { name: c.author === 'agent' ? 'AI' : 'You' },
+          body: new vscode.MarkdownString(c.text),
+          mode: vscode.CommentMode.Preview,
+          timestamp: new Date(c.at),
+          contextValue: flags.join(' ') || undefined,
+        };
+      });
       vt.label = `${t.id} · ${t.status}`;
       vt.contextValue = t.status;
       vt.state =

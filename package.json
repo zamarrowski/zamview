@@ -83,6 +83,24 @@
         "command": "zamview.deleteThread",
         "title": "Delete thread",
         "icon": "$(trash)"
+      },
+      {
+        "command": "zamview.editComment",
+        "title": "Edit",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "zamview.deleteComment",
+        "title": "Delete comment",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "zamview.saveComment",
+        "title": "Save"
+      },
+      {
+        "command": "zamview.cancelEditComment",
+        "title": "Cancel"
       }
     ],
     "menus": {
@@ -108,6 +126,30 @@
           "command": "zamview.replyComment",
           "group": "inline@1",
           "when": "commentController == zamview && !commentThreadIsEmpty"
+        }
+      ],
+      "comments/comment/title": [
+        {
+          "command": "zamview.editComment",
+          "group": "inline@1",
+          "when": "commentController == zamview && comment =~ /editable/"
+        },
+        {
+          "command": "zamview.deleteComment",
+          "group": "inline@2",
+          "when": "commentController == zamview && comment =~ /deletable/"
+        }
+      ],
+      "comments/comment/context": [
+        {
+          "command": "zamview.cancelEditComment",
+          "group": "inline@1",
+          "when": "commentController == zamview"
+        },
+        {
+          "command": "zamview.saveComment",
+          "group": "inline@2",
+          "when": "commentController == zamview"
         }
       ],
       "comments/commentThread/title": [
@@ -146,6 +188,22 @@
         },
         {
           "command": "zamview.deleteThread",
+          "when": "false"
+        },
+        {
+          "command": "zamview.editComment",
+          "when": "false"
+        },
+        {
+          "command": "zamview.deleteComment",
+          "when": "false"
+        },
+        {
+          "command": "zamview.saveComment",
+          "when": "false"
+        },
+        {
+          "command": "zamview.cancelEditComment",
           "when": "false"
         }
       ]
