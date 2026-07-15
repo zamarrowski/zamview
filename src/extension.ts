@@ -20,8 +20,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const storageDir = context.storageUri.fsPath;
   migrateLegacyStores(folderPaths, storageDir);
   const store = new ReviewStore(storageDir, folderPaths[0]);
-  new ReviewComments(store, context);
-  new ChangesTree(store, context);
+  const tree = new ChangesTree(store, context);
+  // the tree owns the git state, so it decides where each thread is anchored
+  // (deleted files anchor to the HEAD side of their diff)
+  new ReviewComments(store, context, {
+    uriFor: (t) => tree.threadUri(t),
+    onDidChange: tree.onGitChange,
+  });
 
   const basePort = vscode.workspace.getConfiguration('zamview').get<number>('port', 7317);
   let url: string | undefined;

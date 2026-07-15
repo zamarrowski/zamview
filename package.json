@@ -2,7 +2,7 @@
   "name": "zamview",
   "displayName": "ZamView",
   "description": "Review your AI agent's changes like a PR: comment on diffs and hand the review to the agent over MCP",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "publisher": "zamarrowski",
   "icon": "media/icon.png",
   "license": "MIT",
@@ -85,6 +85,21 @@
         "icon": "$(trash)"
       },
       {
+        "command": "zamview.reopenThreadFromTree",
+        "title": "Reopen",
+        "icon": "$(debug-restart)"
+      },
+      {
+        "command": "zamview.closeThreadFromTree",
+        "title": "Close conversation",
+        "icon": "$(check-all)"
+      },
+      {
+        "command": "zamview.deleteThreadFromTree",
+        "title": "Delete thread",
+        "icon": "$(trash)"
+      },
+      {
         "command": "zamview.editComment",
         "title": "Edit",
         "icon": "$(edit)"
@@ -114,6 +129,23 @@
           "command": "zamview.refresh",
           "when": "view == zamviewChanges",
           "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "zamview.reopenThreadFromTree",
+          "when": "view == zamviewChanges && viewItem == zamviewThread-resolved",
+          "group": "inline@1"
+        },
+        {
+          "command": "zamview.closeThreadFromTree",
+          "when": "view == zamviewChanges && viewItem =~ /^zamviewThread-/",
+          "group": "inline@2"
+        },
+        {
+          "command": "zamview.deleteThreadFromTree",
+          "when": "view == zamviewChanges && viewItem =~ /^zamviewThread-/",
+          "group": "inline@3"
         }
       ],
       "comments/commentThread/context": [
@@ -188,6 +220,18 @@
         },
         {
           "command": "zamview.deleteThread",
+          "when": "false"
+        },
+        {
+          "command": "zamview.reopenThreadFromTree",
+          "when": "false"
+        },
+        {
+          "command": "zamview.closeThreadFromTree",
+          "when": "false"
+        },
+        {
+          "command": "zamview.deleteThreadFromTree",
           "when": "false"
         },
         {

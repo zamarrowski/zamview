@@ -64,6 +64,9 @@ In multi-root workspaces every folder is registered (including folders added aft
 ## Conventions and gotchas
 
 - Store line numbers are **1-based** (`line`/`endLine`); VS Code `Range` lines are 0-based — mind the ±1 at every boundary.
+- **Threads on deleted files anchor to the HEAD side of the deletion diff** (`git:` URI). `ChangesTree.threadUri` decides where a thread lives and is injected into `ReviewComments` as a `ThreadAnchor`; comment threads match editors by exact `uri.toString()`, so the anchor and `openDiff` must build the git URI with the same `toGitUri(uri, 'HEAD')` call. A `CommentThread`'s uri is immutable — when the anchor moves, `sync()` disposes and recreates the thread.
+- **Renames**: `vscode.git`'s `Change.uri` is the *new* path; `originalUri` is the pre-rename path. Diffs for renamed files must use `toGitUri(originalUri, 'HEAD')` on the left, and a working-tree edit on top of a staged rename (git `RM`) must not clobber the rename info (`changes()` merges it). `remapRenames` relocates threads to the new path so conversations follow moved files.
+- The human verbs (reopen/close/delete) also exist as `*FromTree` commands on the tree's thread items (`viewItem == zamviewThread-<status>`) — the safety net for threads whose file can't be opened at all.
 - Threads store the commented `snippet` because line numbers drift as the agent edits; tool descriptions instruct the agent to relocate via the snippet.
 - The "Finish Review" button sends `/zamview` to the terminal, then sends the Enter (`\r`) in a **separate, delayed `sendText`** — TUIs like Claude Code treat an attached newline as part of a paste and won't submit (`extension.ts:finishReview`).
 - New comments are created `silent` while adopting the ephemeral thread VS Code spawns on "+", so `sync()` doesn't duplicate it (`comments.ts:create`).

@@ -15,10 +15,25 @@ function add(a, b) {
 
 module.exports = { add };
 EOF
+cat > legacy.js <<'EOF'
+function oldHelper(value) {
+  return String(value);
+}
+
+module.exports = { oldHelper };
+EOF
+cat > helpers.js <<'EOF'
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+module.exports = { clamp };
+EOF
 printf 'node_modules/\n' > .gitignore
 git add -A
 git -c user.name="ZamView Sandbox" -c user.email="sandbox@zamview.local" commit -qm "initial state"
-# Simulated AI changes: one modified file, one new file
+# Simulated AI changes: one modified file, one new file, one deleted file and
+# one staged rename with an edit on top
 cat > app.js <<'EOF'
 function add(a, b) {
   return a + b;
@@ -36,6 +51,20 @@ function formatResult(value) {
 }
 
 module.exports = { formatResult };
+EOF
+rm legacy.js
+mkdir lib
+git mv helpers.js lib/helpers.js
+cat > lib/helpers.js <<'EOF'
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function isFinite(value) {
+  return Number.isFinite(value);
+}
+
+module.exports = { clamp, isFinite };
 EOF
 cd ..
 

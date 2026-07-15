@@ -146,6 +146,19 @@ export class ReviewStore extends EventEmitter {
     return thread;
   }
 
+  // Follows a file move: git detected a rename, so the thread points at the
+  // new path and the conversation survives the move
+  relocate(id: string, folder: string, file: string): ReviewThread | undefined {
+    const thread = this.threads.get(id);
+    if (!thread) return undefined;
+    if (thread.folder === folder && thread.file === file) return thread;
+    thread.folder = folder;
+    thread.file = file;
+    this.persist();
+    this.emitChange();
+    return thread;
+  }
+
   setStatus(id: string, status: ThreadStatus, note?: string): ReviewThread | undefined {
     const thread = this.threads.get(id);
     if (!thread) return undefined;

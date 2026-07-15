@@ -8,6 +8,14 @@ interface ZamComment extends vscode.Comment {
   index: number;
 }
 
+// Where a thread's comments should be rendered. The anchor may differ from
+// the thread's file URI (e.g. the HEAD side of a deleted file's diff) and it
+// can move as git state changes, hence the re-sync event.
+export interface ThreadAnchor {
+  uriFor(thread: ReviewThread): vscode.Uri;
+  onDidChange: vscode.Event<void>;
+}
+
 /**
  * Keeps the ReviewStore in sync with the VSCode Comments API.
  * The store is authoritative: any mutation (from the UI or from MCP)
@@ -20,7 +28,8 @@ export class ReviewComments {
 
   constructor(
     private store: ReviewStore,
-    context: vscode.ExtensionContext
+    context: vscode.ExtensionContext,
+    private anchor?: ThreadAnchor
   ) {
     this.controller = vscode.comments.createCommentController('zamview', 'ZamView Review');
     this.controller.options = {
@@ -36,6 +45,7 @@ export class ReviewComments {
     context.subscriptions.push(this.controller);
 
     store.on('change', () => this.sync());
+    if (this.anchor) context.subscriptions.push(this.anchor.onDidChange(() => this.sync()));
     this.sync();
 
     context.subscriptions.push(
@@ -153,9 +163,18 @@ export class ReviewComments {
     // closed threads are not shown; the final loop removes them from the editor
     for (const t of this.store.list('open')) {
       seen.add(t.id);
+      const fileUri = vscode.Uri.file(t.folder ? path.join(t.folder, t.file) : t.file);
+      const uri = this.anchor?.uriFor(t) ?? fileUri;
       let vt = this.byId.get(t.id);
+      // the anchor can move (file deleted or renamed) and a CommentThread's
+      // uri is immutable: rebuild the thread at its new location
+      if (vt && vt.uri.toString() !== uri.toString()) {
+        vt.dispose();
+        this.byThread.delete(vt);
+        this.byId.delete(t.id);
+        vt = undefined;
+      }
       if (!vt) {
-        const uri = vscode.Uri.file(t.folder ? path.join(t.folder, t.file) : t.file);
         vt = this.controller.createCommentThread(uri, this.threadRange(t), []);
         vt.collapsibleState = vscode.CommentThreadCollapsibleState.Expanded;
         this.byId.set(t.id, vt);
